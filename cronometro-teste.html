@@ -54,47 +54,53 @@
 			const params = new URLSearchParams(window.location.search);
 			const interactionId = params.get("interactionId") || "default";
 			const STORAGE_KEY = `seconds_${interactionId}`;
+			const START_KEY = `startTime_${interactionId}`;
 
 			let timer;
-			let seconds = sessionStorage.getItem(STORAGE_KEY)
-				? parseInt(sessionStorage.getItem(STORAGE_KEY))
-				: 0;
+			let startTime = sessionStorage.getItem(START_KEY)
+    			? parseInt(sessionStorage.getItem(START_KEY))
+    			: Date.now();
 
 			function renderClock() {
-				let min = Math.floor(seconds / 60);
-				let sec = seconds % 60;
-
-				document.getElementById("clock").textContent =
-					(min < 10 ? "0" : "") + min + ":" +
-					(sec < 10 ? "0" : "") + sec;
-
-				if (seconds >= 180) {
-					document.body.style.backgroundColor = "red";
-				} else if (seconds >= 60) {
-					document.body.style.backgroundColor = "blue";
-				} else {
-					document.body.style.backgroundColor = "black";
-				}
+			    const seconds = getElapsedSeconds();
+			
+			    let min = Math.floor(seconds / 60);
+			    let sec = seconds % 60;
+			
+			    document.getElementById("clock").textContent =
+			        (min < 10 ? "0" : "") + min + ":" +
+			        (sec < 10 ? "0" : "") + sec;
+			
+			    if (seconds >= 180) {
+			        document.body.style.backgroundColor = "red";
+			    } else if (seconds >= 60) {
+			        document.body.style.backgroundColor = "blue";
+			    } else {
+			        document.body.style.backgroundColor = "black";
+			    }
 			}
 
 			function updateClock() {
 				seconds++;
-				sessionStorage.setItem(STORAGE_KEY, seconds);
+				sessionStorage.setItem(START_KEY, startTime);
 				renderClock();
 			}
 
 			function startClock() {
 				renderClock();
-				timer = setInterval(updateClock, 1000);
+				setInterval(renderClock, 1000);
+			}
+			
+			function getElapsedSeconds() {
+			    return Math.floor((Date.now() - startTime) / 1000);
 			}
 
 			window.resetClock = function () {
-				clearInterval(timer);
-				seconds = 0;
-				sessionStorage.setItem(STORAGE_KEY, seconds);
-				renderClock();
-				startClock();
-			}
+			    startTime = Date.now();
+			    sessionStorage.setItem(START_KEY, startTime);
+			    renderClock();
+			};
+
 
 			startClock();
 		});
@@ -102,4 +108,5 @@
 
 </body>
 </html>
+
 
