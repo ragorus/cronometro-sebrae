@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relógio Digital</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: black;
+            transition: background-color 1s;
+            color: white;
+        }
+
+        .clock {
+            font-size: 80px;
+            padding: 40px;
+            border: 4px solid #fff;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 300px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+
+        button:active {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="clock" class="clock"></div>
+    <button onclick="resetClock()">RESET</button>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+
+			const params = new URLSearchParams(window.location.search);
+			const interactionId = params.get("interactionId") || "default";
+			const STORAGE_KEY = `seconds_${interactionId}`;
+
+			let timer;
+			let seconds = sessionStorage.getItem(STORAGE_KEY)
+				? parseInt(sessionStorage.getItem(STORAGE_KEY))
+				: 0;
+
+			function renderClock() {
+				let min = Math.floor(seconds / 60);
+				let sec = seconds % 60;
+
+				document.getElementById("clock").textContent =
+					(min < 10 ? "0" : "") + min + ":" +
+					(sec < 10 ? "0" : "") + sec;
+
+				if (seconds >= 180) {
+					document.body.style.backgroundColor = "red";
+				} else if (seconds >= 60) {
+					document.body.style.backgroundColor = "blue";
+				} else {
+					document.body.style.backgroundColor = "black";
+				}
+			}
+
+			function updateClock() {
+				seconds++;
+				sessionStorage.setItem(STORAGE_KEY, seconds);
+				renderClock();
+			}
+
+			function startClock() {
+				renderClock();
+				timer = setInterval(updateClock, 1000);
+			}
+
+			window.resetClock = function () {
+				clearInterval(timer);
+				seconds = 0;
+				sessionStorage.setItem(STORAGE_KEY, seconds);
+				renderClock();
+				startClock();
+			}
+
+			startClock();
+		});
+	</script>
+
+</body>
+</html>
+
