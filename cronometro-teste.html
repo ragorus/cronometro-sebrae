@@ -2,8 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relógio Digital</title>
+    <title>Cronômetro por Interação</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,8 +13,8 @@
             height: 100vh;
             margin: 0;
             background-color: black;
-            transition: background-color 1s;
             color: white;
+            transition: background-color 1s;
         }
 
         .clock {
@@ -23,9 +22,9 @@
             padding: 40px;
             border: 4px solid #fff;
             border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
             width: 300px;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         button {
@@ -37,74 +36,70 @@
             border: none;
             border-radius: 10px;
         }
-
-        button:active {
-            background-color: #45a049;
-        }
     </style>
 </head>
 <body>
 
-    <div id="clock" class="clock"></div>
-    <button onclick="resetClock()">RESET</button>
+<div id="clock" class="clock">00:00</div>
+<button onclick="resetClock()">RESET</button>
 
-	<script>
-		document.addEventListener("DOMContentLoaded", function () {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-			const params = new URLSearchParams(window.location.search);
-			const interactionId = params.get("interactionId") || "default";
-			const STORAGE_KEY = `seconds_${interactionId}`;
-			const START_KEY = `startTime_${interactionId}`;
+    // 1️⃣ Captura o ID da interação
+    const params = new URLSearchParams(window.location.search);
+    const interactionId = params.get("interactionId") || "default";
 
-			let timer;
-			let startTime = sessionStorage.getItem(START_KEY)
-    			? parseInt(sessionStorage.getItem(START_KEY))
-    			: Date.now();
+    // 2️⃣ Chave única por interação
+    const START_KEY = `startTime_${interactionId}`;
 
-			function renderClock() {
-			    const seconds = getElapsedSeconds();
-			
-			    let min = Math.floor(seconds / 60);
-			    let sec = seconds % 60;
-			
-			    document.getElementById("clock").textContent =
-			        (min < 10 ? "0" : "") + min + ":" +
-			        (sec < 10 ? "0" : "") + sec;
-			
-			    if (seconds >= 180) {
-			        document.body.style.backgroundColor = "red";
-			    } else if (seconds >= 60) {
-			        document.body.style.backgroundColor = "blue";
-			    } else {
-			        document.body.style.backgroundColor = "black";
-			    }
-			}
+    // 3️⃣ Recupera ou cria o startTime (NUNCA sobrescreve)
+    let startTime = sessionStorage.getItem(START_KEY);
 
-			function updateClock() {
-				seconds++;
-				sessionStorage.setItem(START_KEY, startTime);
-				renderClock();
-			}
+    if (!startTime) {
+        startTime = Date.now();
+        sessionStorage.setItem(START_KEY, startTime);
+    } else {
+        startTime = parseInt(startTime);
+    }
 
-			function startClock() {
-				renderClock();
-				setInterval(renderClock, 1000);
-			}
-			
-			function getElapsedSeconds() {
-			    return Math.floor((Date.now() - startTime) / 1000);
-			}
+    // 4️⃣ Calcula tempo decorrido
+    function getElapsedSeconds() {
+        return Math.floor((Date.now() - startTime) / 1000);
+    }
 
-			window.resetClock = function () {
-			    startTime = Date.now();
-			    sessionStorage.setItem(START_KEY, startTime);
-			    renderClock();
-			};
+    // 5️⃣ Renderiza o relógio
+    function renderClock() {
+        const seconds = getElapsedSeconds();
 
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
 
-			startClock();
-		});
-	</script>
+        document.getElementById("clock").textContent =
+            (min < 10 ? "0" : "") + min + ":" +
+            (sec < 10 ? "0" : "") + sec;
+
+        if (seconds >= 180) {
+            document.body.style.backgroundColor = "red";
+        } else if (seconds >= 60) {
+            document.body.style.backgroundColor = "blue";
+        } else {
+            document.body.style.backgroundColor = "black";
+        }
+    }
+
+    // 6️⃣ Atualização visual (não lógica)
+    setInterval(renderClock, 1000);
+    renderClock();
+
+    // 7️⃣ Reset APENAS dessa interação
+    window.resetClock = function () {
+        startTime = Date.now();
+        sessionStorage.setItem(START_KEY, startTime);
+        renderClock();
+    };
+});
+</script>
 
 </body>
 </html>
