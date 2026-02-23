@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Cronômetro por Interação</title>
+<title>Cronômetro</title>
 
 <style>
     body {
@@ -37,35 +37,6 @@
         border: none;
         border-radius: 10px;
     }
-
-    /* Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.85);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-
-    .modal-box {
-        background: white;
-        color: black;
-        padding: 40px;
-        border-radius: 12px;
-        text-align: center;
-        font-size: 22px;
-        min-width: 300px;
-    }
-
-    .modal-box button {
-        margin-top: 20px;
-        background-color: #d9534f;
-    }
 </style>
 </head>
 
@@ -77,15 +48,25 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ==============================
+    /* ============================
        CONFIGURAÇÃO
-    ============================== */
+    ============================ */
 
-    const ALERT_TIME = 120; // tempo em segundos para disparar alerta
+    const ALERT_TIME = 120; // segundos para disparar notificação
 
-    /* ==============================
+    /* ============================
+       SOLICITA PERMISSÃO
+    ============================ */
+
+    if ("Notification" in window) {
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    }
+
+    /* ============================
        IDENTIFICA INTERAÇÃO
-    ============================== */
+    ============================ */
 
     const params = new URLSearchParams(window.location.search);
     const interactionId = params.get("interactionId") || "default";
@@ -93,9 +74,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const START_KEY = `startTime_${interactionId}`;
     const ALERT_KEY = `alertTriggered_${interactionId}`;
 
-    /* ==============================
-       CONTROLE DE INÍCIO
-    ============================== */
+    /* ============================
+       CONTROLE INICIAL
+    ============================ */
 
     let startTime = sessionStorage.getItem(START_KEY);
 
@@ -108,9 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let alertTriggered = sessionStorage.getItem(ALERT_KEY) === "true";
 
-    /* ==============================
+    /* ============================
        FUNÇÕES
-    ============================== */
+    ============================ */
 
     function getElapsedSeconds() {
         return Math.floor((Date.now() - startTime) / 1000);
@@ -126,7 +107,6 @@ document.addEventListener("DOMContentLoaded", function () {
             (min < 10 ? "0" : "") + min + ":" +
             (sec < 10 ? "0" : "") + sec;
 
-        /* Mudança de cor */
         if (seconds >= 180) {
             document.body.style.backgroundColor = "red";
         } else if (seconds >= 60) {
@@ -135,38 +115,20 @@ document.addEventListener("DOMContentLoaded", function () {
             document.body.style.backgroundColor = "black";
         }
 
-        /* Disparo do alerta */
         if (seconds >= ALERT_TIME && !alertTriggered) {
             alertTriggered = true;
             sessionStorage.setItem(ALERT_KEY, "true");
-            showAlert(seconds);
+            triggerNotification();
         }
     }
 
-    function showAlert(seconds) {
-
-        const modal = document.createElement("div");
-        modal.className = "modal-overlay";
-        modal.id = "alertModal";
-
-        modal.innerHTML = `
-            <div class="modal-box">
-                ⏰ Tempo limite atingido!
-                <br><br>
-                Interação: ${interactionId}
-                <br>
-                Tempo: ${seconds} segundos
-                <br><br>
-                <button onclick="closeAlert()">Fechar</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-    }
-
-    window.closeAlert = function () {
-        const modal = document.getElementById("alertModal");
-        if (modal) modal.remove();
+    function triggerNotification() {
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("⏰ Tempo de atendimento atingido!", {
+                body: "Verifique suas interações em andamento.",
+                silent: false
+            });
+        }
     }
 
     window.resetClock = function () {
@@ -176,13 +138,12 @@ document.addEventListener("DOMContentLoaded", function () {
         alertTriggered = false;
         sessionStorage.setItem(ALERT_KEY, "false");
 
-        closeAlert();
         renderClock();
     }
 
-    /* ==============================
+    /* ============================
        LOOP VISUAL
-    ============================== */
+    ============================ */
 
     setInterval(renderClock, 1000);
     renderClock();
