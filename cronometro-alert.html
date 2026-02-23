@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Cronômetro por Interação</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: black;
+        color: white;
+        transition: background-color 0.5s;
+    }
+
+    .clock {
+        font-size: 80px;
+        padding: 40px;
+        border: 4px solid #fff;
+        border-radius: 15px;
+        width: 300px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    button {
+        padding: 15px 40px;
+        font-size: 20px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 10px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .modal-box {
+        background: white;
+        color: black;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 22px;
+        min-width: 300px;
+    }
+
+    .modal-box button {
+        margin-top: 20px;
+        background-color: #d9534f;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="clock" class="clock">00:00</div>
+<button onclick="resetClock()">RESET</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* ==============================
+       CONFIGURAÇÃO
+    ============================== */
+
+    const ALERT_TIME = 120; // tempo em segundos para disparar alerta
+
+    /* ==============================
+       IDENTIFICA INTERAÇÃO
+    ============================== */
+
+    const params = new URLSearchParams(window.location.search);
+    const interactionId = params.get("interactionId") || "default";
+
+    const START_KEY = `startTime_${interactionId}`;
+    const ALERT_KEY = `alertTriggered_${interactionId}`;
+
+    /* ==============================
+       CONTROLE DE INÍCIO
+    ============================== */
+
+    let startTime = sessionStorage.getItem(START_KEY);
+
+    if (!startTime) {
+        startTime = Date.now();
+        sessionStorage.setItem(START_KEY, startTime);
+    } else {
+        startTime = parseInt(startTime);
+    }
+
+    let alertTriggered = sessionStorage.getItem(ALERT_KEY) === "true";
+
+    /* ==============================
+       FUNÇÕES
+    ============================== */
+
+    function getElapsedSeconds() {
+        return Math.floor((Date.now() - startTime) / 1000);
+    }
+
+    function renderClock() {
+        const seconds = getElapsedSeconds();
+
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+
+        document.getElementById("clock").textContent =
+            (min < 10 ? "0" : "") + min + ":" +
+            (sec < 10 ? "0" : "") + sec;
+
+        /* Mudança de cor */
+        if (seconds >= 180) {
+            document.body.style.backgroundColor = "red";
+        } else if (seconds >= 60) {
+            document.body.style.backgroundColor = "blue";
+        } else {
+            document.body.style.backgroundColor = "black";
+        }
+
+        /* Disparo do alerta */
+        if (seconds >= ALERT_TIME && !alertTriggered) {
+            alertTriggered = true;
+            sessionStorage.setItem(ALERT_KEY, "true");
+            showAlert(seconds);
+        }
+    }
+
+    function showAlert(seconds) {
+
+        const modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.id = "alertModal";
+
+        modal.innerHTML = `
+            <div class="modal-box">
+                ⏰ Tempo limite atingido!
+                <br><br>
+                Interação: ${interactionId}
+                <br>
+                Tempo: ${seconds} segundos
+                <br><br>
+                <button onclick="closeAlert()">Fechar</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    window.closeAlert = function () {
+        const modal = document.getElementById("alertModal");
+        if (modal) modal.remove();
+    }
+
+    window.resetClock = function () {
+        startTime = Date.now();
+        sessionStorage.setItem(START_KEY, startTime);
+
+        alertTriggered = false;
+        sessionStorage.setItem(ALERT_KEY, "false");
+
+        closeAlert();
+        renderClock();
+    }
+
+    /* ==============================
+       LOOP VISUAL
+    ============================== */
+
+    setInterval(renderClock, 1000);
+    renderClock();
+
+});
+</script>
+
+</body>
+</html>
